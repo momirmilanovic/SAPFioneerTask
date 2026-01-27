@@ -4,13 +4,12 @@ import { test, expect } from '@playwright/test';
 import { AmazonMainPage } from '../../../pages/amazon/amazonMainPage.js';
 import { getSearchTerm } from '../../../utils/searchTerms/searchterms.js';
 const  Config  = require('../../../utils/config.js'); // both approaches of using config shown with intenttion
-const  config = require ('../../../config.js');
 
 
 let context;
 let page;
 let amazonMainPage;
-// const config = new Config(); cannot initialize like this, because some methods are static
+
 
 test.describe.serial('Smoke Tests Suite', () => {
 
@@ -24,9 +23,19 @@ test.describe.serial('Smoke Tests Suite', () => {
 
   test('Search products on default All departments', async () => {
     await amazonMainPage.searchForTerm(getSearchTerm('mainSearchTerm'));
-    await amazonMainPage.assertTitlesInfoElementsExist();
-    await page.waitForTimeout(5000);
+    await amazonMainPage.verifySearchResultsPage();
+    
+  });
+
+  test('Search products in defined department', async () => {
+    await amazonMainPage.searchForTermInDepartment(getSearchTerm('department'), getSearchTerm('secondSearchTerm'));
+    await amazonMainPage.verifyTitlesInfoElementsExist()  // No related search on department level, reported bug
+    await amazonMainPage.verifyNumberOfSearchResults();
+  });
+
+  test('Check product data accuracy', async () => {
+   await amazonMainPage.searchForTerm(getSearchTerm('accurateDataSearchTerm'));
+    await amazonMainPage.verifyProductDataAccuracy();
   });
   
-
 });

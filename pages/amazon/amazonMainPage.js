@@ -23,24 +23,41 @@ class AmazonMainPage extends Page {
     return this.page.locator('id=nav-search-submit-button');
   }
 
-  get searchResults() {
-    return this.page.locator('.s-search-results');
-  }
-
   get resultsTitle() {
-    return this.page.locator('//h2[contains(@class, "a-size-medium-plus") and contains(text(), "Results")]');
+    return this.page.locator('//h2[contains(@class, "a-size-medium-plus")][text()="Results"]');
   }
 
-  get checkOtherProductsInfi() {
-    return this.page.locator('//span[contains(text(), "Check each product page for other buying options")]');
+  get checkEachProductInfo() {
+    return this.page.locator('//span[text()="Check each product page for other buying options."]');
   }
 
-  get relatedSearchTitle() {
-    return this.page.locator('//h2[contains(@class, "a-size-medium-plus") and contains(text(), "Related searches")]');
+  get relatedSearchesTitle() {
+    return this.page.locator('//h2[contains(@class, "a-size-medium-plus")][text()="Related searches"]');
   }
 
-  get singleProduct() {
-    return this.page.locator('//div[role="listitem"]');
+  get singleSearchResult() {
+    return this.page.locator('//div[@role="listitem"][@data-component-type="s-search-result"]');
+  }
+
+  get singleSearchSuggestion() {
+    return this.page.locator('div.a-box.a-first.textref-border.textref-box-first[role="listitem"]');  // different approach wiith intention
+  }
+
+  get relatedSearchesSuggestions() {
+    return this.page.locator('//span[@data-component-type="text-reformulation-widget"]');
+  }
+
+  get departmentDropdown() {
+    return this.page.locator('id=searchDropdownBox');
+  }
+  /**
+   * Searches for a term in department
+   * @param {string} department - The department to search in
+   * @param {string} searchTerm - The term to search for
+   */
+  async searchForTermInDepartment(department, searchTerm) {
+    await this.selectDepartment(department);
+    await this.searchForTerm(searchTerm);
   }
 
   /**
@@ -52,52 +69,69 @@ class AmazonMainPage extends Page {
     await this.searchButton.click();
   }
 
+  async selectDepartment(department) {
+    await this.departmentDropdown.selectOption(department);
+  }
+  
 
 /**
-   * Asserts product search results and page
+   * Verifies product search results and page
    */
-  async assertSearchResultsPage() {
-    await this.assertTitlesInfoElementsExist();
-    await this.assertMoreThanNProductsExist(10); // can be defined in some config too
+  async verifySearchResultsPage() {              // can be extened e.g : to check taht search resuls has image, title, text et
+    await this.verifyTitlesInfoElementsExist();
+    await this.verifyNumberOfSearchResults();
+    await this.verifyRelatedSearchesExists();
   }
 
   /**
-   * Asserts that all search result elements exist on the page
+   * Verifies that all search result elements exist on the page
    */
-  async assertTitlesInfoElementsExist() {
-    await this.assertResultsExists();
-    await this.assertOtherBuyingOptionsExists();
-    await this.assertRelatedSearchesExists();
+  async verifyTitlesInfoElementsExist() {
+    await this.verifyResultsExists();
+    await this.verifyCheckEachProductInfoExists();
   }
 
   /**
-   * Asserts that Results element exists on the page
+   * Verifies that Results element exists on the page
    */
-  async assertResultsExists() {
+  async verifyResultsExists() {
     await expect(this.resultsTitle).toBeVisible();
+  }
 
+  async verifyProductDataAccuracy() {
+    await expect(this.singleSearchResult).toBeVisible();
   }
 
   /**
-   * Asserts that "Check each product page for other buying options" element exists on the page
+   * Verifies that "Check each product page for other buying options" element exists on the page
    */
-  async assertOtherBuyingOptionsExists() {
-    await expect(this.checkOtherProductsInfi).toBeVisible();
+  async verifyCheckEachProductInfoExists() {
+    await expect(this.checkEachProductInfo).toBeVisible();
+  }
+  
+
+  /**
+   * Verifies that "Related searches" element exists on the page
+   */
+  async verifyRelatedSearchesExists() {
+    await expect(this.relatedSearchesTitle).toBeVisible();
+    await expect(this.relatedSearchesSuggestions).toBeVisible();
   }
 
   /**
-   * Asserts that "Related searches" element exists on the page
+   * Verify that there are more than N products on the page
    */
-  async assertRelatedSearchesExists() {
-    await expect(this.relatedSearchTitle).toBeVisible();
-  }
-
-  /**
-   * Asserts that there are more than N products on the page
-   */
-  async assertMoreThanNProductsExist(n = 10) {
-    const count = await this.singleProduct.count();
+  async verifyNumberOfSearchResults(n = 1) {
+    const count = await this.singleSearchResult.count();    // n should be set to config too
     await expect(count).toBeGreaterThan(n);
+  }
+
+
+  /**
+   * Verifies Related Searches exists
+   */
+  async verifySearchSuggestionsExist() {
+     await expect(this.relatedSearchesSuggestions).toBeVisible();
   }
 
 }
