@@ -130,7 +130,7 @@ class AmazonMainPage extends Page {
    * Verifies product search results and page
    */
   async verifySearchResultsPage() {              // can be extened e.g : to check taht search resuls has image, title, text etc, and size
-    await this.verifyTitlesInfoElementsExist();
+    await this.verifyTitlesInfoElementsExist();  // can be parametrizes multiple ways: to check for specific elements, to provide expected searh  results etc
     await this.verifyNumberOfSearchResults();
     await this.verifyRelatedSearchesExists();
     await this.verifySideFiltersVisible();
