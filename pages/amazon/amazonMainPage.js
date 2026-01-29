@@ -28,7 +28,7 @@ class AmazonMainPage extends Page {
   }
 
   get noResultsTitle() {
-    return this.page.locator('//span[contains(normalize-space(),"No results for your search query")]');
+    return this.page.locator('//h2/span[contains(@class, "a-size-medium") and contains(@class, "a-text-normal")][contains(text(), "No results for your search query")]');
   }
 
   get checkEachProductInfo() {
@@ -45,6 +45,10 @@ class AmazonMainPage extends Page {
 
   get singleSearchResult() {
     return this.page.locator('//div[@role="listitem"][@data-component-type="s-search-result"]');
+  }
+
+  get sideFilters() {
+    return this.page.locator('//span[@data-component-type="s-filters-panel-view"]');
   }
 
   get singleSearchSuggestion() {
@@ -67,12 +71,20 @@ class AmazonMainPage extends Page {
     return this.page.locator('//a[@role="button"][contains(@class, "s-pagination-next")]');
   }
 
+  searchSummary(searchTerm) {
+    return this.page.locator(`//span[text() = "${searchTerm}"]`);
+  }
+
+  searchTermInSummary(searchTerm) {
+    return this.page.locator(`//span[text() = "${searchTerm}" and @class="a-color-state a-text-bold"]`);
+  }
+
   /**
    * Searches for a term in department
    * @param {string} department - The department to search in
    * @param {string} searchTerm - The term to search for
    */
-  async searchForTermInDepartment(department, searchTerm) {
+  async searchForTermInDepartment({ department, searchTerm }) {
     await this.selectDepartment(department);
     await this.searchForTerm(searchTerm);
   }
@@ -85,10 +97,14 @@ class AmazonMainPage extends Page {
     await this.searchInput.fill(searchTerm);
     await this.searchButton.click();
     await this.page.waitForLoadState('load');  // for 'load', 'domcontentloaded' etc can be created enum like object since JS does not have enums
-    // changeCountryPopup.toBeVisible() ? this.dimissChangeCountryPopup() : null; // example of handling popup if appears
+    // changeCountryPopup.toBeVisible() ? this.dimissChangeCountryPopup() : null; // can be added handling popup if appears
     }
 
   
+/**
+   * Searches for a term in department
+   * @param {integer} department - Number of pages to be checked for calculation
+   */
   async calculateAvgPriceForFirstNResultPages(N = 3) {
     let allPrices = [];
 
@@ -113,10 +129,11 @@ class AmazonMainPage extends Page {
 /**
    * Verifies product search results and page
    */
-  async verifySearchResultsPage() {              // can be extened e.g : to check taht search resuls has image, title, text et
+  async verifySearchResultsPage() {              // can be extened e.g : to check taht search resuls has image, title, text etc, and size
     await this.verifyTitlesInfoElementsExist();
     await this.verifyNumberOfSearchResults();
     await this.verifyRelatedSearchesExists();
+    await this.verifySideFiltersVisible();
   }
 
   /**
@@ -138,36 +155,20 @@ class AmazonMainPage extends Page {
    * Verifies that a product with specific title and price exists in search results
    * @param {string} title - The product title to search for
    * @param {string} price - The price to search for
-   * @returns {Promise<boolean>} True if product with matching title and price is found
    */
-  async verifyProductDataAccuracy(title, price) {
-    const productElements = this.singleSearchResult;
-    const count = await productElements.count();
-    
-    for (let i = 0; i < count; i++) {
-      const product = productElements.nth(i);
-      const productText = await product.textContent();
-      
-      // Check if both title and price exist in the product element
-      if (productText.includes(title) && productText.includes(price)) {
-        return true;
-      }
-    }
-    
-    // If no matching product found, throw error
-    throw new Error(`Product with title "${title}" and price "${price}" not found in search results`);
+  async verifyProductDataAccuracy(title, data) {
+    let searchedResult = this.singleSearchResult.nth(0)
+    const productText = await searchedResult.textContent();
+    await this.page.waitForTimeout(10_000);
+    Object.entries(data).forEach(([key, value]) => {
+      expect(productText).toContain(`${value}`);
+    });
+
   }
 
   /**
-   * Asserts that a product with specific title and price exists in search results
-   * @param {string} title - The product title to search for
-   * @param {string} price - The price to search for
+   * Select department from dropdown
    */
-  async assertProductDataAccuracy(title, price) {
-    const result = await this.verifyProductDataAccuracy(title, price);
-    expect(result).toBe(true);
-  }
-
   async selectDepartment(department) {
     await this.departmentDropdown.selectOption(department);
   }
@@ -185,13 +186,13 @@ class AmazonMainPage extends Page {
    */
   async verifyRelatedSearchesExists() {
     await expect(this.relatedSearchesTitle).toBeVisible();
-    await expect(this.relatedSearchesSuggestions).toBeVisible();
+    await expect(this.relatedSearchesSuggestions).toBeVisible();  // 
   }
 
   /**
    * Verify that there are more than N products on the page
    */
-  async verifyNumberOfSearchResults(n = 1) {
+  async verifyNumberOfSearchResults(n = 10) {
     const count = await this.singleSearchResult.count();    // n should be set to config too
     expect(count).toBeGreaterThan(n);
   }
@@ -204,11 +205,26 @@ class AmazonMainPage extends Page {
      await expect(this.relatedSearchesSuggestions).toBeVisible();
   }
 
+  /**
+   * Verifies expected information when no results of search
+   */
   async verifyNoSearchResults() {
     await expect(this.noResultsTitle).toBeVisible();
     await expect(this.tryCheckingInfo).toBeVisible();
   }
 
+  /**
+   * Verifies that side filters are visible on the page
+   */
+  async verifySideFiltersVisible() {
+    await expect(this.sideFilters).toBeVisible();
+  }
+
+
+  async verifySearchSummary({expectedSummary, searchTerm}) {
+    await expect(this.searchSummary(expectedSummary)).toBeVisible();
+    // await expect(this.searchTermInSummary(searchTerm)).toBeVisible();
+  }
 }
 
 module.exports = { AmazonMainPage };

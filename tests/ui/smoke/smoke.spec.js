@@ -27,18 +27,20 @@ test.describe.serial('Smoke Tests Suite', () => {
   });
 
   test('Search products in defined department', async () => {
-    await amazonMainPage.searchForTermInDepartment(getSearchTerm('firstDepartment'), getSearchTerm('secondSearchTerm'));
-    await amazonMainPage.verifyTitlesInfoElementsExist()  // No related search on department level, reported bug
-    await amazonMainPage.verifyNumberOfSearchResults();
+    await amazonMainPage.searchForTermInDepartment({ department: getSearchTerm('firstDepartment'), searchTerm: getSearchTerm('secondSearchTerm') });
+    await amazonMainPage.verifyTitlesInfoElementsExist()  // No related search on department level, reported bug, even maybe is desired behavior
+    await amazonMainPage.verifyNumberOfSearchResults(11);   // this 3 methods can be wrapped in one method
+    await amazonMainPage.verifySideFiltersVisible();
+    await amazonMainPage.verifySearchSummary({ expectedSummary: '1-12 of over 10,000 results for', searchTerm: getSearchTerm('secondSearchTerm') }); // expectedSummary can be get or defined other ways
   });
 
   test('Check product data accuracy', async () => {
-    await amazonMainPage.searchForTerm(getSearchTerm('accurateDataSearchTerm'));
-    // await amazonMainPage.verifyProductDataAccuracy(getSearchTerm('accurateDataSearchTerm'), "24.92");
-  });
+    await amazonMainPage.searchForTermInDepartment({ department: getSearchTerm('departmentAll'), searchTerm: getSearchTerm('accurateDataSearchTerm') });
+    await amazonMainPage.verifyProductDataAccuracy(getSearchTerm('accurateDataSearchTerm'), { price: "$64.34", ages: '7 years and up' });  // can be extended to any of data of search results product
+  });                                                                                                                                      // expected values can be get from api or db
 
-  test('TASK: Calculate average price for first three results pages', async () => {
-    await amazonMainPage.searchForTermInDepartment(getSearchTerm('departmentAll'), getSearchTerm('thirdSearchTerm'));
+  test('TASK: Calculate average price for first three results pages', async () => { // separated in test to be more visible
+    await amazonMainPage.searchForTerm(getSearchTerm('thirdSearchTerm'));
     let avgPrice = await amazonMainPage.calculateAvgPriceForFirstNResultPages();
     console.log(`Average price for first three results pages: ${avgPrice}`);
   });

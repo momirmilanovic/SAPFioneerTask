@@ -12,3 +12,5 @@ module.exports = {
   productTypeSearchTerm: "phone",
   smallNoResultsSerach: ""
 };
+
+// better solution: create object and export it as Config
