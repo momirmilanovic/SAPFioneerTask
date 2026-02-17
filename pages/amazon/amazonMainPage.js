@@ -102,11 +102,11 @@ class AmazonMainPage extends Page {
 
   
 /**
-   * Searches for a term in department
    * @param {integer} department - Number of pages to be checked for calculation
    */
   async calculateAvgPriceForFirstNResultPages(N = 3) {
     let allPrices = [];
+    let results = {};
 
     for (let page = 1; page <= N; page++) {
       const count = await this.singleSearchResult.count(); 
@@ -115,14 +115,15 @@ class AmazonMainPage extends Page {
         let price = await this.productPrice.nth(i).innerText();
         price = parseFloat(price.substring(1).replace(/,/g, ''));
         !isNaN(price) ? allPrices.push(price) : null;
-      }      
+        const avgPagePrice = parseFloat((allPrices.reduce((sum, price) => sum + price, 0) / allPrices.length).toFixed(2));
+        results[`page: ${page}`] = avgPagePrice;
+        allPrices = [];
+      }
       await this.nextPageButton.click();
       await this.page.waitForLoadState('load'); 
     }
     
-    const averagePrice = parseFloat((allPrices.reduce((sum, price) => sum + price, 0) / allPrices.length).toFixed(2));
-  
-    return averagePrice;
+    return results;
   }
 
 
